@@ -49,7 +49,7 @@ func newCursor(b []byte) (Cursor, error) {
 
 	return &cursor{
 		char:     EOF,
-		position: -1,
+		position: 0,
 		content:  b,
 		length:   len(b),
 	}, nil

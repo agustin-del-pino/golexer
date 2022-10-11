@@ -28,3 +28,10 @@ func (t token) GetValue() []byte {
 func (t token) GetType() TokenType {
 	return t._type
 }
+
+func NewToken(t TokenType, v []byte) Token[TokenType] {
+	return token{
+		_type: t,
+		value: v,
+	}
+}

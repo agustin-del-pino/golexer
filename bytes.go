@@ -45,15 +45,27 @@ func (p *BPoints) HasPoint(b byte) bool {
 	return false
 }
 
-type defaultByteRange struct {}
+type defaultByteRange struct{}
 
 func (d defaultByteRange) IsInRange(b byte) bool {
 	return false
 }
 
-type defaultBytePoint struct {}
+type defaultBytePoint struct{}
 
 func (d defaultBytePoint) HasPoint(b byte) bool {
 	return false
 }
 
+func NewSingleByteRange(f byte, t byte) ByteRange {
+	return SingleByteRange{
+		from: f,
+		to:   t,
+	}
+}
+
+func NewBPoints(p ...byte) BytePoints {
+	return &BPoints{
+		points: p,
+	}
+}
