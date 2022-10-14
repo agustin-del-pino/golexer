@@ -351,3 +351,43 @@ func main() {
 ```
 
 Congratulation, the Number Lexer is done.
+
+## Deep Understanding
+
+The implementation is quite simple, but is useful knows how it's structured for make better use of.
+
+### The Lexer Implementation
+All **Lex Decorators** are prepared for take more than one **Lex Function**, but it's a feature for the future, right now doesn't have any useful use. 
+
+When the tokenize is executed the order of is:
+
+1. The Ignore Bytes.
+2. The Lex Number.
+3. The Lex String.
+4. The Lex Identifier.
+5. The Lex Comment.
+6. The Lex Delimiter.
+
+In case the current char doesn't match with any of the *lex uses* described, an error will throw.
+
+### The Cursor Implementation
+The start values are:
+```go
+{
+	char:     EOF,
+	position: 0,
+	content:  b,
+	length:   len(b),
+}
+```
+The `EOF` constant is the `0x00` (`NULL`) byte.
+
+### The Token Implementation
+The token types are:
+
+- Number
+- String
+- Comment
+- Identifier
+- Keyword
+- Delimiter
