@@ -151,3 +151,203 @@ Token<T> LexerFunction<T>(Cursor);
 ```
 In human words, the function takes one parameter, the current Cursor, and returns the Token. The *generic type* stands for the solicited by the **Token Interface**.
 
+
+# Golang Lexer Decorator Pattern Implementation
+As everyone knows, Golang doesn't have any pretty way to implement the Decorator Pattern (in other case Python has the *Decorator & Decorated Functions*). So,this implementation has to be done by the old way.
+
+`decorator_function(decorated_function)`
+
+## Quick Start
+*For deep information of how is the implementation, jump to the next topic.*
+
+### Let's create a Number Lexer
+First, create new instance of the Lexer Implementation.
+
+```go
+func main(){
+  l, _ := lexer.NewLexer()
+}
+```
+
+Add the range of the number to the lexer settings.
+It can be done by using the ByteRange implementation `SingleByteRange`.
+
+```go
+func main(){
+  l, _ := lexer.NewLexer(lexer.LexerSettings{
+		Numbers: lexer.NewSingleByteRange(0x30, 0x39),
+	})
+}
+```
+
+Use the `LexNumber` method of the instanced lexer for add a **Lex Function**.
+
+```go
+func main(){
+  l, _ := lexer.NewLexer(lexer.LexerSettings{
+		Numbers: lexer.NewSingleByteRange(0x30, 0x39),
+	})
+
+  l.LexNumber(lexNumbs)
+}
+```
+
+Just for finish up the main function, call the `Tokenize` method and pass a number.
+
+```go
+func main(){
+  l, _ := lexer.NewLexer(lexer.LexerSettings{
+		Numbers: lexer.NewSingleByteRange(0x30, 0x39),
+	})
+
+  l.LexNumber(lexNumbs)
+  t, _ := l.Tokenize([]byte("0123456789"))  
+	fmt.Printf("tokens: %v\n", t)
+}
+```
+
+Now the fun part, let's build the **Lex Function**.
+
+```go
+func lexNumbs(c *lexer.Cursor) lexer.Token[lexer.TokenType] {
+}
+```
+
+The digits need to be storage in a buffer. Using a byte array may be enough. Also, add the current char to the buffer and don't forget to move the cursor.
+
+```go
+func lexNumbs(c *lexer.Cursor) lexer.Token[lexer.TokenType] {
+  var b []byte
+  
+  b = append(b, (*c).GetChar())
+  
+  (*c).Advance()
+}
+```
+
+For now return a new token. Of course, the type must be **Number** and the value will be the buffer.
+
+
+```go
+func lexNumbs(c *lexer.Cursor) lexer.Token[lexer.TokenType] {
+  var b []byte
+  
+  b = append(b, (*c).GetChar())
+  
+  (*c).Advance()
+  return lexer.NewToken(lexer.Number, b)
+}
+```
+
+With all of this done, just run the program.
+
+```shell
+go run main.go
+```
+
+As you can notice, everything works fine but the lexer is detecting each number as separated tokens without any relation to the previous or next numbers. 
+
+### Let's improve the Number Lexer
+
+A little modification must be done before start. Pass the `ByteRange` to a global variable. Also, add some error handling.
+
+```go
+var NUMBS = lexer.NewSingleByteRange(0x30, 0x39)
+
+func lexNumbs(c *lexer.Cursor) lexer.Token[lexer.TokenType] {
+	var b []byte
+
+	b = append(b, (*c).GetChar())
+
+	(*c).Advance()
+
+	return lexer.NewToken(lexer.Number, b)
+}
+
+func main() {
+	l, lerr := lexer.NewLexer(lexer.LexerSettings{
+		Numbers: NUMBS,
+	})
+
+	if lerr != nil {
+		fmt.Printf("lerr: %v\n", lerr)
+		return
+	}
+
+	l.LexNumber(lexNumbs)
+
+	if t, terr := l.Tokenize([]byte("0123456789")); terr != nil {
+		fmt.Printf("terr: %v\n", terr)
+	} else {
+		fmt.Printf("t: %v\n", t)
+	}
+}
+```
+
+So far, so good. 
+
+From now, let's focus into grab more digits for creates a one single token. For do that it such simple as moving along the cursor and buff the current char until a condition. 
+What condition?. Well, the current char must be a digit, in other words, must be in range of `NUMBS`, otherwise the current char is not a digit, in this case the loop breaks and the token can be created with the buffered chars.
+
+```go
+func lexNumbs(c *lexer.Cursor) lexer.Token[lexer.TokenType] {
+	var b []byte
+
+	b = append(b, (*c).GetChar())
+
+	(*c).Advance()
+
+  for NUMBS.IsInRange((*c).GetChar()) {
+    b = append(b, (*c).GetChar())
+		(*c).Advance()
+  }
+
+	return lexer.NewToken(lexer.Number, b)
+}
+```
+
+With this, only one thing left to do: *read multiple number tokens*.
+
+This last step is very simple, just add the white spaces as ignorable char, so when space appears, the lexer will ignore it and moves to the next char.
+
+```go
+var NUMBS = lexer.NewSingleByteRange(0x30, 0x39)
+var IGNORE = lexer.NewBPoints(0x20)
+
+func lexNumbs(c *lexer.Cursor) lexer.Token[lexer.TokenType] {
+	var b []byte
+
+	b = append(b, (*c).GetChar())
+
+	(*c).Advance()
+
+	for NUMBS.IsInRange((*c).GetChar()) {
+		b = append(b, (*c).GetChar())
+		(*c).Advance()
+	}
+
+	return lexer.NewToken(lexer.Number, b)
+}
+
+func main() {
+	l, lerr := lexer.NewLexer(lexer.LexerSettings{
+		Numbers: NUMBS,
+		Ignore:  IGNORE,
+	})
+
+	if lerr != nil {
+		fmt.Printf("lerr: %v\n", lerr)
+		return
+	}
+
+	l.LexNumber(lexNumbs)
+
+	if t, terr := l.Tokenize([]byte("001100 987654321 123 456 789")); terr != nil {
+		fmt.Printf("terr: %v\n", terr)
+	} else {
+		fmt.Printf("t: %v\n", t)
+	}
+}
+```
+
+Congratulation, the Number Lexer is done.

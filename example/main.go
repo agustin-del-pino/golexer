@@ -16,8 +16,8 @@ func lexNumbs(c *lexer.Cursor) lexer.Token[lexer.TokenType] {
 
 	(*c).Advance()
 
-	for ch := (*c).GetChar(); !(*c).IsEOF() && NUMBS.IsInRange(ch); {
-		b = append(b, ch)
+	for NUMBS.IsInRange((*c).GetChar()) {
+		b = append(b, (*c).GetChar())
 		(*c).Advance()
 	}
 
@@ -27,7 +27,7 @@ func lexNumbs(c *lexer.Cursor) lexer.Token[lexer.TokenType] {
 func main() {
 	l, lerr := lexer.NewLexer(lexer.LexerSettings{
 		Numbers: NUMBS,
-		Ignore: IGNORE,
+		Ignore:  IGNORE,
 	})
 
 	if lerr != nil {
@@ -37,7 +37,7 @@ func main() {
 
 	l.LexNumber(lexNumbs)
 
-	if t, terr := l.Tokenize([]byte("0123456789 23453222")); terr != nil {
+	if t, terr := l.Tokenize([]byte("001100 987654321 123 456 789")); terr != nil {
 		fmt.Printf("terr: %v\n", terr)
 	} else {
 		fmt.Printf("t: %v\n", t)
